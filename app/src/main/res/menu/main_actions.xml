@@ -18,4 +18,21 @@
         android:title="Help"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/B_hospitals"
+        android:title="Find hospitals"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/B_schools"
+        android:title="Find schools"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/B_restaurants"
+        android:title="Find restaurant"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/B_food"
+        android:title="Find foods shop"
+        app:showAsAction="never"/>
+
 </menu>

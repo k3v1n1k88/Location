@@ -45,12 +45,13 @@ import java.util.Locale;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
-    private static final String TAG = "Somgthing" ;
+    private static final String TAG = "Something" ;
     private GoogleMap mMap;
     private LatLng mLocation;
     private GeoDataClient geoDataClient;
     private List<PlacePhotoMetadata> photosDataList;
     private FloatingActionButton floatingActionButton;
+    int REQUEST_CODE = 123;
     Marker marker;
     String address;
     String name;
@@ -104,15 +105,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), GetDirectionActivity.class);
+                Intent intent = new Intent(MapsActivity.this, GetDirectionActivity.class);
                 if(name!=null) {
                     intent.putExtra("lat", mLocation.latitude);
-                    intent.putExtra("lon", mLocation.longitude);
+                    intent.putExtra("long", mLocation.longitude);
                     intent.putExtra("name", name);
                     intent.putExtra("address", address);
                     intent.putExtra("placeID", placeId);
                 }
-                startActivity(intent);
+                startActivityForResult(intent,REQUEST_CODE);
             }
         });
 

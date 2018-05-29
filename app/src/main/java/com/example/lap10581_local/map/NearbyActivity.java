@@ -2,6 +2,7 @@ package com.example.lap10581_local.map;
 
 import android.Manifest;
 import android.app.ActionBar;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -23,6 +24,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -43,6 +45,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallback,
@@ -62,6 +65,10 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
     Circle circle;
     String url;
     TypeLocation typeLocation = TypeLocation.HOSPITAL;
+    private Button btnIncreaseRadius;
+    private Button btnDecreaseRadius;
+    private Button btnSignUp;
+    private Button btnSignIn;
 
     enum TypeLocation{
         HOSPITAL,
@@ -89,6 +96,74 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
         drawerLayout = (DrawerLayout) findViewById(R.id.activity_main_drawer);
         drawerToggle = new ActionBarDrawerToggle(this,drawerLayout,R.string.navigation_drawer_open,R.string.navigation_drawer_close);
         drawerLayout.addDrawerListener(drawerToggle);
+
+        btnDecreaseRadius = (Button) findViewById(R.id.btnDecreaseRadius);
+        btnIncreaseRadius = (Button) findViewById(R.id.btnIncreaseRadius);
+
+        btnSignIn = (Button) findViewById(R.id.btnSignIn);
+        btnSignUp = (Button) findViewById(R.id.btnSignUp);
+
+        btnSignIn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(NearbyActivity.this,LoginActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        btnIncreaseRadius.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mMap.clear();
+                PROXIMITY_RADIUS+=100;
+                GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
+                Object dataTransfer[] = new Object[2];
+                url = getUrl(latitude,longitude);
+                dataTransfer[0] = mMap;
+                dataTransfer[1] = url;
+                getNearbyPlacesData.execute(dataTransfer);
+
+                if(circle != null){
+                    circle.remove();
+                }
+                CircleOptions circleOptions = new CircleOptions();
+                circleOptions.center(new LatLng(latitude,longitude)).radius(PROXIMITY_RADIUS);
+
+                circle = mMap.addCircle(circleOptions);
+                circle.setFillColor(0x220000FF);
+                circle.setStrokeColor(Color.WHITE);
+
+                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(NearbyActivity.this));
+                Log.d("Set Info windows","success");
+            }
+        });
+
+        btnDecreaseRadius.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PROXIMITY_RADIUS-=100;
+                mMap.clear();
+                url = getUrl(latitude,longitude);
+                GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
+                Object dataTransfer[] = new Object[2];
+                dataTransfer[0] = mMap;
+                dataTransfer[1] = url;
+                getNearbyPlacesData.execute(dataTransfer);
+
+                if(circle != null){
+                    circle.remove();
+                }
+                CircleOptions circleOptions = new CircleOptions();
+                circleOptions.center(new LatLng(latitude,longitude)).radius(PROXIMITY_RADIUS);
+
+                circle = mMap.addCircle(circleOptions);
+                circle.setFillColor(0x220000FF);
+                circle.setStrokeColor(Color.WHITE);
+
+                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(NearbyActivity.this));
+                Log.d("Set Info windows","success");
+            }
+        });
     }
 
     @Override
@@ -107,6 +182,12 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
     public boolean onOptionsItemSelected(MenuItem item) {
         if(drawerToggle.onOptionsItemSelected(item)){
             return true;
+        }
+        switch (item.getItemId()){
+            case R.id.search:
+                Intent intent = new Intent(this,MapsActivity.class);
+                startActivity(intent);
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -159,22 +240,8 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
                 longitude = cameraPosition.target.longitude;
                 Log.d("Camera change ",latitude+","+longitude);
                 mMap.clear();
-                switch (typeLocation){
-                    case HOSPITAL:
-                        url = getUrl(latitude,longitude,new String("hospital"));
-                        break;
-                    case SCHOOL:
-                        url = getUrl(latitude,longitude,new String("school"));
-                        break;
-                    case RESTAURENT:
-                        url = getUrl(latitude,longitude,new String("restaurant"));
-                        break;
-                    case FOOD:
-                        url = getUrl(latitude,longitude,new String("food"));
-                        break;
-                        default:
-                            url = getUrl(latitude,longitude,new String("hospital"));
-                }
+                url = getUrl(latitude,longitude);
+
                 GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
                 Object dataTransfer[] = new Object[2];
                 dataTransfer[0] = mMap;
@@ -200,6 +267,23 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
             public boolean onMarkerClick(Marker marker) {
                 marker.showInfoWindow();
                 return true;
+            }
+        });
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                String snippetInfo = marker.getTitle();
+                String[] arraySnippet = snippetInfo.split("\\:");
+                String name = arraySnippet[0];
+                String address="";
+                if(arraySnippet.length>1)
+                    address = arraySnippet[1];
+                Intent intent = new Intent(NearbyActivity.this,GetDirectionActivity.class);
+                intent.putExtra("lat",marker.getPosition().latitude);
+                intent.putExtra("long",marker.getPosition().longitude);
+                intent.putExtra("name",name);
+                intent.putExtra("address",address);
+                startActivity(intent);
             }
         });
     }
@@ -265,38 +349,8 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
 
         switch(v.getId())
         {
-            case R.id.B_search:
-                EditText tf_location =  findViewById(R.id.TF_location);
-                String location = tf_location.getText().toString();
-                List<Address> addressList;
 
-
-                if(!location.equals(""))
-                {
-                    Geocoder geocoder = new Geocoder(this);
-
-                    try {
-                        addressList = geocoder.getFromLocationName(location, 5);
-
-                        if(addressList != null)
-                        {
-                            for(int i = 0;i<addressList.size();i++)
-                            {
-                                LatLng latLng = new LatLng(addressList.get(i).getLatitude() , addressList.get(i).getLongitude());
-                                MarkerOptions markerOptions = new MarkerOptions();
-                                markerOptions.position(latLng);
-                                markerOptions.title(location);
-                                mMap.addMarker(markerOptions);
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-                                mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
-                            }
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                break;
-            case R.id.B_hopistals:
+            case R.id.B_hospitals:
                 mMap.clear();
                 typeLocation = TypeLocation.HOSPITAL;
 //                String hospital = "hospital";
@@ -339,9 +393,25 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
 
-    private String getUrl(double latitude , double longitude , String nearbyPlace)
+    private String getUrl(double latitude , double longitude)
     {
-
+        String nearbyPlace="";
+        switch (typeLocation){
+            case HOSPITAL:
+                nearbyPlace="hospital";
+                break;
+            case SCHOOL:
+                nearbyPlace="school";
+                break;
+            case RESTAURENT:
+                url = "restaurant";
+                break;
+            case FOOD:
+                url = "food";
+                break;
+            default:
+                url = "hospital";
+        }
         StringBuilder googlePlaceUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
         googlePlaceUrl.append("location="+latitude+","+longitude);
         googlePlaceUrl.append("&radius="+PROXIMITY_RADIUS);
@@ -398,6 +468,7 @@ public class NearbyActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
     }
+
 
 }
 

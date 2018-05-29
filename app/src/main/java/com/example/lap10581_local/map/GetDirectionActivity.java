@@ -100,10 +100,12 @@ public class GetDirectionActivity extends FragmentActivity implements OnMapReady
         EditText editText1 = (EditText)((LinearLayout)autocompleteFragmentSoure.getView()).getChildAt(1);
         editText1.setBackgroundColor(Color.parseColor("#3B86FF"));
         editText1.setTextColor(Color.parseColor("#ffffff"));
+        editText1.setHint("From location");
 
         EditText editText2 = (EditText)((LinearLayout)autocompleteFragmentDestination.getView()).getChildAt(1);
         editText2.setBackgroundColor(Color.parseColor("#3B86FF"));
         editText2.setTextColor(Color.parseColor("#ffffff"));
+        editText2.setHint("To destination");
 
 
 
@@ -225,18 +227,30 @@ public class GetDirectionActivity extends FragmentActivity implements OnMapReady
         LatLng myLatLag = new LatLng(10.762622, 106.660172);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myLatLag,12));
         Intent intent = getIntent();
-        if(intent.getAction()!=null){
-            EditText editText1 = (EditText)((LinearLayout)autocompleteFragmentSoure.getView()).getChildAt(1);
-            double lat = intent.getDoubleExtra("lat",10);
-            double lon = intent.getDoubleExtra("lon",10);
-            sourcePlace = new LatLng(lat,lon);
-            nameSource = intent.getStringExtra("name");
-            placeIdSource = intent.getStringExtra("placeId");
-            addressSource = intent.getStringExtra("address");
-            editText1.setText(nameSource);
-            markerSource = mMap.addMarker(new MarkerOptions().position(sourcePlace).title(nameSource+addressSource).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(sourcePlace,12));
+
+        if(intent.getExtras()!=null)
+        {
+
+            double lat = intent.getDoubleExtra("lat",10.762622);
+            double lon = intent.getDoubleExtra("lon",106.660172);
+            destinationPlace = new LatLng(lat,lon);
+            nameDestination = intent.getStringExtra("name");
+            placeIdDestination = intent.getStringExtra("placeId");
+            addressDestination = intent.getStringExtra("address");
+            markerSource = mMap.addMarker(new MarkerOptions().position(destinationPlace).title(nameDestination+addressDestination).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(destinationPlace,12));
+            EditText editText2 = (EditText)((LinearLayout)autocompleteFragmentDestination.getView()).getChildAt(1);
+
+            editText2.setText(nameDestination);
         }
+        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(GetDirectionActivity.this));
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                marker.showInfoWindow();
+                return false;
+            }
+        });
     }
 
     @Override
